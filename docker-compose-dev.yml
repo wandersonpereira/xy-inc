@@ -1,0 +1,31 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql:latest
+    restart: always
+    volumes:
+      - ./docker/provision/mysql/init:/docker-entrypoint-initdb.d
+    entrypoint: ['/entrypoint.sh', '--default-authentication-plugin=mysql_native_password']
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=zup
+      - MYSQL_PASSWORD=zup
+    networks:
+      - network-back
+      
+  web:
+    build: ./docker/java
+    restart: always
+    volumes:
+      - ./:/usr/src/myapp
+    networks:
+      - network-back
+    links:
+      - db
+    command: "/tmp/wait-for.sh db -- mvn spring-boot:run"
+    ports:
+      - 8080:8080
+networks:
+    network-back:
+      driver: bridge
